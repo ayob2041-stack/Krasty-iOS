@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -66,7 +66,7 @@ jobs:
           zip -r Krasty.ipa Payload
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v4
+       uses: actions/upload-artifact@v6
         with:
           name: Krasty-iOS
           path: Krasty.ipa
