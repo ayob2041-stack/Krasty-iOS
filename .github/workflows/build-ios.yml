@@ -1,0 +1,72 @@
+name: Build Krasty iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Create Xcode project
+        run: |
+          cat > project.yml <<'EOF'
+          name: Krasty
+          options:
+            bundleIdPrefix: com.krasty
+            deploymentTarget:
+              iOS: "16.0"
+
+          targets:
+            Krasty:
+              type: application
+              platform: iOS
+              deploymentTarget: "16.0"
+              sources:
+                - KrastyApp.swift
+                - ContentView.swift
+                - WebView.swift
+              info:
+                path: Info.plist
+              settings:
+                base:
+                  PRODUCT_BUNDLE_IDENTIFIER: com.krasty.app
+                  SWIFT_VERSION: 5.0
+                  TARGETED_DEVICE_FAMILY: "1,2"
+                  CODE_SIGNING_ALLOWED: NO
+                  CODE_SIGNING_REQUIRED: NO
+          EOF
+
+          xcodegen generate
+
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -project Krasty.xcodeproj \
+            -scheme Krasty \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Create IPA package
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Krasty.app Payload/
+          zip -r Krasty.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Krasty-iOS
+          path: Krasty.ipa
